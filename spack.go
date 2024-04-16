@@ -37,10 +37,11 @@ type config struct {
 		InstallTree struct {
 			Root string `yaml:"root"`
 		} `yaml:"install_tree"`
+		BuildStage []string `yaml:"build_stage"`
 	} `yaml:"config"`
 }
 
-func (s *Spack) GetInstallRoot() (string, error) {
+func (s *Spack) readConfig() (*config, error) {
 	pr, pw := io.Pipe()
 	cmd := s.exec("config", "get", "config")
 	cmd.Stdout = pw
@@ -50,14 +51,23 @@ func (s *Spack) GetInstallRoot() (string, error) {
 		pw.Close()
 	}()
 
-	var c config
+	c := new(config)
 
-	err := yaml.NewDecoder(pr).Decode(&c)
+	err := yaml.NewDecoder(pr).Decode(c)
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
+func (s *Spack) GetInstallRoot() (string, error) {
+	c, err := s.readConfig()
 	if err != nil {
 		return "", err
 	}
 
-	return c.Config.InstallTree.Root, nil
+	return replaceVars(c.Config.InstallTree.Root), nil
 }
 
 type Package struct {
@@ -192,4 +202,17 @@ func (s *Spack) Install(pkg string, extra ...string) error {
 
 func (s *Spack) CleanupBuilds() error {
 	return s.exec("clean", "-s").Run()
+}
+
+func (s *Spack) GetStageDir() (string, error) {
+	c, err := s.readConfig()
+	if err != nil {
+		return "", nil
+	}
+
+	for _, path := range c.Config.BuildStage {
+		return replaceVars(path), nil
+	}
+
+	return "", nil
 }
