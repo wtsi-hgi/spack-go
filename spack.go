@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
@@ -81,4 +82,49 @@ func (s *Spack) ListLatestPackages() ([]Package, error) {
 	}
 
 	return packages, nil
+}
+
+type SpackDB struct {
+	Database struct {
+		Installs map[string]*Install `json:"installs"`
+	} `json:"database"`
+}
+
+type Install struct {
+	Spec struct {
+		Name         string `json:"name"`
+		Version      string `json:"version"`
+		Hash         string `json:"hash"`
+		Dependencies []struct {
+			Name   string `json:"name"`
+			Hash   string `json:"hash"`
+			Params struct {
+				DepTypes []string `json:"deptypes"`
+			} `json:"parameters"`
+		} `json:"dependencies"`
+	} `json:"spec"`
+	Path        string  `json:"path"`
+	InstallTime float64 `json:"installation_time"`
+}
+
+func (s *Spack) GetInstalledPackages() (map[string]*Install, error) {
+	root, err := s.GetInstallRoot()
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := os.Open(filepath.Join(root, ".spack-db", "index.json"))
+	if err != nil {
+		return nil, err
+	}
+
+	defer f.Close()
+
+	var db SpackDB
+
+	if err := json.NewDecoder(f).Decode(&db); err != nil {
+		return nil, err
+	}
+
+	return db.Database.Installs, nil
 }
