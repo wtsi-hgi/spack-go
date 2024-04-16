@@ -187,7 +187,7 @@ func (s *Spack) GetInstalledPackages() (map[string]*Install, error) {
 }
 
 func (s *Spack) Install(pkg string, extra ...string) error {
-	return s.exec(append([]string{"install", "pkg"}, extra...)...).Run()
+	return s.exec(append([]string{"install", "-U", "--deprecated", "--fail-fast", pkg}, extra...)...).Run()
 }
 
 func (s *Spack) CleanupBuilds() error {
