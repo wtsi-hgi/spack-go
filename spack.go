@@ -1,6 +1,7 @@
 package spack
 
 import (
+	"encoding/json"
 	"io"
 	"os"
 	"os/exec"
@@ -51,4 +52,33 @@ func (s *Spack) GetInstallRoot() (string, error) {
 	}
 
 	return c.Config.InstallTree.Root, nil
+}
+
+type Package struct {
+	Name    string `json:"name"`
+	Version string `json:"latest_version"`
+}
+
+func (s *Spack) ListLatestPackages() ([]Package, error) {
+	cmd := s.exec("list", "--format version_json")
+	pr, pw := io.Pipe()
+
+	cmd.Stdout = pw
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+
+	var packages []Package
+
+	if err := json.NewDecoder(pr).Decode(&packages); err != nil {
+		return nil, err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return nil, err
+	}
+
+	return packages, nil
 }
