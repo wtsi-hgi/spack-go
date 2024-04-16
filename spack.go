@@ -25,7 +25,11 @@ func New(exe string, args ...string) *Spack {
 }
 
 func (s *Spack) exec(args ...string) *exec.Cmd {
-	return exec.Command(s.exe, append(append([]string{}, s.args...), args...)...)
+	cmd := exec.Command(s.exe, append(append([]string{}, s.args...), args...)...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd
 }
 
 type config struct {
@@ -40,7 +44,6 @@ func (s *Spack) GetInstallRoot() (string, error) {
 	pr, pw := io.Pipe()
 	cmd := s.exec("config", "get", "config")
 	cmd.Stdout = pw
-	cmd.Stderr = os.Stderr
 
 	go func() {
 		cmd.Run()
@@ -67,7 +70,6 @@ func (s *Spack) ListLatestPackages() ([]Package, error) {
 	pr, pw := io.Pipe()
 
 	cmd.Stdout = pw
-	cmd.Stderr = os.Stderr
 
 	if err := cmd.Start(); err != nil {
 		return nil, err
@@ -185,17 +187,9 @@ func (s *Spack) GetInstalledPackages() (map[string]*Install, error) {
 }
 
 func (s *Spack) Install(pkg string, extra ...string) error {
-	cmd := s.exec(append([]string{"install", "pkg"}, extra...)...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
+	return s.exec(append([]string{"install", "pkg"}, extra...)...).Run()
 }
 
 func (s *Spack) CleanupBuilds() error {
-	cmd := s.exec("clean", "-s")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
+	return s.exec("clean", "-s").Run()
 }
