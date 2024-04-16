@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -105,6 +107,59 @@ type Install struct {
 	} `json:"spec"`
 	Path        string  `json:"path"`
 	InstallTime float64 `json:"installation_time"`
+}
+
+func versionCompare(new, old string) int {
+	a := strings.Split(new, ".")
+	b := strings.Split(old, ".")
+
+	for n, pa := range a {
+		if n >= len(b) {
+			return 1
+		}
+
+		pb := b[n]
+
+		fa, erra := strconv.ParseUint(pa, 10, 64)
+		fb, errb := strconv.ParseUint(pb, 10, 64)
+
+		if erra != nil {
+			if errb != nil {
+				if pa != pb {
+					if pa > pb {
+						return 1
+					}
+
+					return -1
+				}
+			}
+
+			return 1
+		} else if errb != nil {
+			return -1
+		}
+
+		if fa > fb {
+			return 1
+		} else if fa < fb {
+			return -1
+		}
+	}
+
+	return 0
+}
+
+func (i *Install) NewerThan(j *Install) bool {
+	switch versionCompare(i.Spec.Version, j.Spec.Version) {
+	case -1:
+		return false
+	case 0:
+		if j.InstallTime > i.InstallTime {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (s *Spack) GetInstalledPackages() (map[string]*Install, error) {
