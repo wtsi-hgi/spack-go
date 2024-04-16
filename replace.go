@@ -21,17 +21,18 @@ var replaceable = map[string]func() string{
 }
 
 func replaceVars(path string) string {
-	if path == "/" || path == "" {
-		return path
+	if path == "" {
+		return ""
 	}
 
-	dir, file := filepath.Split(path)
+	file := filepath.Base(path)
+	dir := filepath.Dir(path)
 
 	if fn, ok := replaceable[file]; ok {
 		file = fn()
 	}
 
-	return replaceVars(dir) + file
+	return filepath.Join(replaceVars(dir), file)
 }
 
 var tmpVars = [...]string{"TMPDIR", "TEMP", "TMP"}
