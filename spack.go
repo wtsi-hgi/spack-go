@@ -183,3 +183,11 @@ func (s *Spack) GetInstalledPackages() (map[string]*Install, error) {
 
 	return db.Database.Installs, nil
 }
+
+func (s *Spack) Install(pkg string, extra ...string) error {
+	cmd := s.exec(append([]string{"install", "pkg"}, extra...)...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
