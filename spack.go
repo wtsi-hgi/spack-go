@@ -191,3 +191,11 @@ func (s *Spack) Install(pkg string, extra ...string) error {
 
 	return cmd.Run()
 }
+
+func (s *Spack) CleanupBuilds() error {
+	cmd := s.exec("clean", "-s")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
