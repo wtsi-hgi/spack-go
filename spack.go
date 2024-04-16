@@ -13,15 +13,22 @@ import (
 )
 
 type Spack struct {
-	exe  string
-	args []string
+	exe    string
+	args   []string
+	config config
 }
 
-func New(exe string, args ...string) *Spack {
-	return &Spack{
+func New(exe string, args ...string) (*Spack, error) {
+	s := &Spack{
 		exe:  exe,
 		args: args,
 	}
+
+	if err := s.readConfig(); err != nil {
+		return nil, err
+	}
+
+	return s, nil
 }
 
 func (s *Spack) exec(args ...string) *exec.Cmd {
@@ -41,7 +48,7 @@ type config struct {
 	} `yaml:"config"`
 }
 
-func (s *Spack) readConfig() (*config, error) {
+func (s *Spack) readConfig() error {
 	pr, pw := io.Pipe()
 	cmd := s.exec("config", "get", "config")
 	cmd.Stdout = pw
@@ -51,23 +58,16 @@ func (s *Spack) readConfig() (*config, error) {
 		pw.Close()
 	}()
 
-	c := new(config)
-
-	err := yaml.NewDecoder(pr).Decode(c)
+	err := yaml.NewDecoder(pr).Decode(&s.config)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return c, nil
+	return nil
 }
 
-func (s *Spack) GetInstallRoot() (string, error) {
-	c, err := s.readConfig()
-	if err != nil {
-		return "", err
-	}
-
-	return replaceVars(c.Config.InstallTree.Root), nil
+func (s *Spack) GetInstallRoot() string {
+	return replaceVars(s.config.Config.InstallTree.Root)
 }
 
 type Package struct {
@@ -175,10 +175,7 @@ func (i *Install) NewerThan(j *Install) bool {
 }
 
 func (s *Spack) GetInstalledPackages() (map[string]*Install, error) {
-	root, err := s.GetInstallRoot()
-	if err != nil {
-		return nil, err
-	}
+	root := s.GetInstallRoot()
 
 	f, err := os.Open(filepath.Join(root, ".spack-db", "index.json"))
 	if err != nil {
@@ -204,15 +201,10 @@ func (s *Spack) CleanupBuilds() error {
 	return s.exec("clean", "-s").Run()
 }
 
-func (s *Spack) GetStageDir() (string, error) {
-	c, err := s.readConfig()
-	if err != nil {
-		return "", nil
+func (s *Spack) GetStageDir() string {
+	for _, path := range s.config.Config.BuildStage {
+		return replaceVars(path)
 	}
 
-	for _, path := range c.Config.BuildStage {
-		return replaceVars(path), nil
-	}
-
-	return "", nil
+	return ""
 }
