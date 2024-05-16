@@ -1,6 +1,7 @@
 package spack
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"os"
@@ -211,4 +212,26 @@ func (s *Spack) GetStageDir() string {
 	}
 
 	return ""
+}
+
+func (s *Spack) GetEnvVars(pkgs map[string]*Install) (*bytes.Buffer, error) {
+	args := make([]string, 2, 2+len(pkgs))
+
+	args[0] = "load"
+	args[1] = "--sh"
+
+	for _, pkg := range pkgs {
+		args = append(args, pkg.Spec.Name+"/"+pkg.Spec.Hash)
+	}
+
+	buf := bytes.NewBuffer(nil)
+
+	cmd := s.exec(args...)
+	cmd.Stdout = buf
+
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+
+	return buf, nil
 }
