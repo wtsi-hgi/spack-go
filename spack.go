@@ -121,6 +121,10 @@ type Install struct {
 	InstallTime float64 `json:"installation_time"`
 }
 
+func (i *Install) SpackPath() string {
+	return i.Spec.Name + "-" + i.Spec.Version + "-" + i.Spec.Hash
+}
+
 func versionCompare(new, old string) int {
 	a := strings.Split(new, ".")
 	b := strings.Split(old, ".")
