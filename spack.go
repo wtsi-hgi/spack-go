@@ -3,6 +3,8 @@ package spack
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -60,8 +62,8 @@ func (s *Spack) readConfig() error {
 	}()
 
 	err := yaml.NewDecoder(pr).Decode(&s.config)
-	if err != nil {
-		return err
+	if err != nil && !errors.Is(err, io.EOF) {
+		return fmt.Errorf("failed to read spack config: %w", err)
 	}
 
 	return nil
