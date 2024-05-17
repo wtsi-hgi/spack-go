@@ -21,7 +21,7 @@ var replaceable = map[string]func() string{
 }
 
 func replaceVars(path string) string {
-	if path == "" {
+	if path == "" || path == "/" || path == "." {
 		return ""
 	}
 
