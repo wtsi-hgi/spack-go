@@ -92,12 +92,15 @@ func getPlatform() string {
 func getOS() string {
 	return ""
 }
+
 func getTarget() string {
 	return ""
 }
+
 func getTargetFamily() string {
 	return ""
 }
+
 func getDate() string {
 	return time.Now().Format(time.DateOnly)
 }
