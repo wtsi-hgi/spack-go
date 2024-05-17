@@ -79,14 +79,15 @@ type Package struct {
 }
 
 func (s *Spack) ListLatestPackages() ([]Package, error) {
-	cmd := s.exec("list", "--format version_json")
+	cmd := s.exec("list", "--format", "version_json")
 	pr, pw := io.Pipe()
 
 	cmd.Stdout = pw
 
-	if err := cmd.Start(); err != nil {
-		return nil, err
-	}
+	go func() {
+		cmd.Run()
+		pw.Close()
+	}()
 
 	var packages []Package
 
@@ -97,6 +98,8 @@ func (s *Spack) ListLatestPackages() ([]Package, error) {
 	if err := cmd.Wait(); err != nil {
 		return nil, err
 	}
+
+	pw.Close()
 
 	return packages, nil
 }
