@@ -96,12 +96,6 @@ func (s *Spack) ListLatestPackages() ([]Package, error) {
 		return nil, err
 	}
 
-	if err := cmd.Wait(); err != nil {
-		return nil, err
-	}
-
-	pw.Close()
-
 	return packages, nil
 }
 
