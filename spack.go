@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -188,7 +189,9 @@ func (s *Spack) GetInstalledPackages() (map[string]*Install, error) {
 	root := s.GetInstallRoot()
 
 	f, err := os.Open(filepath.Join(root, ".spack-db", "index.json"))
-	if err != nil {
+	if errors.Is(err, fs.ErrNotExist) {
+		return make(map[string]*Install), nil
+	} else if err != nil {
 		return nil, err
 	}
 
