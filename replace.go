@@ -21,8 +21,10 @@ var replaceable = map[string]func() string{
 }
 
 func replaceVars(path string) string {
-	if path == "" || path == "/" || path == "." {
+	if path == "" || path == "/" {
 		return path
+	} else if path == "." {
+		return ""
 	}
 
 	file := filepath.Base(path)
