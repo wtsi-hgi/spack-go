@@ -78,7 +78,7 @@ func getUser() string {
 		return ""
 	}
 
-	return u.Name
+	return u.Username
 }
 
 func getArch() string {
